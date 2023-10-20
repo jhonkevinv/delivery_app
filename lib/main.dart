@@ -3,6 +3,7 @@ import 'package:flutter_maps_example/modal/classes.dart';
 import 'package:flutter_maps_example/modal/location_search.dart';
 import 'package:flutter_maps_example/util/home_example.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
+import 'package:map_launcher/map_launcher.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +22,20 @@ class _MyAppState extends State<MyApp> {
   String? _locationText2 = 'Seleccionar dirección';
   List<GeoPoint> pointsRoadBackup = List<GeoPoint>.generate(
       2, (counter) => GeoPoint(latitude: 0, longitude: 0));
+  List listApp = [];
+  @override
+  void initState() {
+    super.initState();
+    getApps();
+  }
+
+  Future<void> getApps() async {
+    final availableMaps = await MapLauncher.installedMaps;
+    for (var element in availableMaps) {
+      listApp.add(element.mapName);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -35,7 +50,7 @@ class _MyAppState extends State<MyApp> {
                     child: Align(
                   alignment: Alignment.topCenter,
                   child: Container(
-                    height: MediaQuery.of(context).size.height / 1.375,
+                    height: MediaQuery.of(context).size.height / 1.39,
                     child: MainExample(pointsRoadBackup: pointsRoadBackup),
                   ),
                 )),
@@ -68,7 +83,9 @@ class _MyAppState extends State<MyApp> {
                                       LocationData? locationData =
                                           await LocationSearch.show(
                                               context: context,
-                                              lightAdress: true,
+                                              lightAdress: false,
+                                              countryCodes: ["PE"],
+                                              language: "es",
                                               mode: Mode.fullscreen);
                                       if (locationData != null) {
                                         setState(() {
@@ -132,7 +149,9 @@ class _MyAppState extends State<MyApp> {
                                       LocationData? locationData =
                                           await LocationSearch.show(
                                               context: context,
-                                              lightAdress: true,
+                                              language: "es",
+                                              countryCodes: ['PE'],
+                                              lightAdress: false,
                                               mode: Mode.fullscreen);
                                       if (locationData != null) {
                                         setState(() {
@@ -182,12 +201,17 @@ class _MyAppState extends State<MyApp> {
                                   height: 15,
                                 ),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    GestureDetector(
+                                    listApp.contains('Google Maps')?GestureDetector(
                                       onTap: () async {
-
+                                        await MapLauncher.showDirections(
+                                            mapType: MapType.google,
+                                            origin: Coords(pointsRoadBackup.first.latitude, pointsRoadBackup.first.longitude),
+                                            destination: Coords(pointsRoadBackup.last.latitude, pointsRoadBackup.last.longitude),
+                                            directionsMode: DirectionsMode.driving
+                                        );
                                       },
                                       child: Container(
                                         padding: EdgeInsets.only(
@@ -200,15 +224,42 @@ class _MyAppState extends State<MyApp> {
                                           borderRadius:
                                           BorderRadius.circular(10.0),),
                                         child: Text(
-                                          'Navegar en Wase',
+                                          'Navegar en Google Maps',
                                           maxLines: 1,
                                           style: TextStyle(color: Colors.white),
                                           textAlign: TextAlign.center,
                                         ),
                                       ),
-                                    ),
+                                    ):Container(),
+                                    listApp.contains('Waze')?GestureDetector(
+                                      onTap: () async {
+                                        await MapLauncher.showDirections(
+                                          mapType: MapType.waze,
+                                          origin: Coords(pointsRoadBackup.first.latitude, pointsRoadBackup.first.longitude),
+                                          destination: Coords(pointsRoadBackup.last.latitude, pointsRoadBackup.last.longitude),
+                                          directionsMode: DirectionsMode.driving
+                                        );
+                                      },
+                                      child: Container(
+                                        padding: EdgeInsets.only(
+                                            left: 10,
+                                            right: 10,
+                                            bottom: 10,
+                                            top: 10),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green,
+                                          borderRadius:
+                                          BorderRadius.circular(10.0),),
+                                        child: Text(
+                                          'Navegar con Waze',
+                                          maxLines: 1,
+                                          style: TextStyle(color: Colors.white),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    ):Container(),
                                   ],
-                                )
+                                ),
                               ],
                             ):Container(),
                           ],

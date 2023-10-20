@@ -418,11 +418,10 @@ class _LocationSearchWidgetState extends State<LocationSearchWidget> {
                       }
                       setState(() {});
                       _debounce =
-                          Timer(const Duration(milliseconds: 300), () async {
+                          Timer(const Duration(milliseconds: 100), () async {
                         var client = http.Client();
                         try {
-                          String url =
-                              "https://nominatim.openstreetmap.org/search?q=$value&format=json&polygon_geojson=1&addressdetails=1&accept-language=${widget.language}${widget.countryCodes == null ? '' : '&countrycodes=${widget.countryCodes}'}";
+                          String url = "https://nominatim.openstreetmap.org/search?q=$value&format=jsonv2&polygon_geojson=1&addressdetails=1&accept-language=es&countrycodes=PE";
                           var response = await client.get(Uri.parse(url));
                           var decodedResponse =
                               jsonDecode(utf8.decode(response.bodyBytes))

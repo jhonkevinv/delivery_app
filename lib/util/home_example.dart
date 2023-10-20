@@ -25,15 +25,8 @@ class _MainExampleState extends State<MainExample>
   int x = 0;
   String textDistancia = '';
   String textTime = '';
-  late AnimationController animationController = AnimationController(
-    vsync: this,
-    duration: Duration(
-      milliseconds: 500,
-    ),
-  );
-  late Animation<double> animation =
-      Tween<double>(begin: 0, end: 2 * pi).animate(animationController);
-  final ValueNotifier<int> mapRotate = ValueNotifier(0);
+  bool validation = false;
+  String? pointsRoadsBack = '[GeoPoint{latitude: 0.0 , longitude: 0.0}, GeoPoint{latitude: 0.0 , longitude: 0.0}]';
   @override
   void initState() {
     super.initState();
@@ -44,6 +37,7 @@ class _MainExampleState extends State<MainExample>
       ),
     );
     scaffoldKey = GlobalKey<ScaffoldState>();
+    RoadRute();
   }
 
   void data() async {
@@ -79,9 +73,32 @@ class _MainExampleState extends State<MainExample>
     if (timer != null && timer!.isActive) {
       timer?.cancel();
     }
-    animationController.dispose();
     controller.dispose();
     super.dispose();
+  }
+
+  RoadRute() {
+    Timer.periodic(
+      const Duration(seconds: 1),
+      (Timer timer) {
+        if (validation == false) {
+          if ((widget.pointsRoadBackup?.first.latitude != 0 &&
+                  widget.pointsRoadBackup?.first.longitude != 0) &&
+              (widget.pointsRoadBackup?.last.latitude != 0 &&
+                  widget.pointsRoadBackup?.last.longitude != 0)) {
+            beginDrawRoad.value = true;
+            data();
+            pointsRoadsBack = widget.pointsRoadBackup.toString();
+            validation = true;
+            setState(() {});
+          }
+        }
+        if ((pointsRoadsBack != widget.pointsRoadBackup.toString())) {
+          validation = false;
+          setState(() {});
+        }
+      },
+    );
   }
 
   @override
@@ -94,50 +111,37 @@ class _MainExampleState extends State<MainExample>
               (widget.pointsRoadBackup?.last.latitude != 0 &&
                   widget.pointsRoadBackup?.last.longitude != 0)
           ? Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Container(
-            margin: EdgeInsets.only(bottom: 15),
-            padding: EdgeInsets.only(top: 10, bottom: 10),
-            width: 100,
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10), color: Colors.white),
-            child: GestureDetector(
-              onTap: () {
-                beginDrawRoad.value = true;
-                data();
-              },
-              child: Text(
-                'Crear ruta',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-          textDistancia != ''?Container(
-            margin: EdgeInsets.only(bottom: 15),
-            padding: EdgeInsets.only(top: 10, bottom: 10),
-            width: 300,
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10), color: Colors.white),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Text(
-                  textDistancia,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontWeight: FontWeight.w400, fontSize: 12),
-                ),
-                Text(
-                  textTime,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontWeight: FontWeight.w400, fontSize: 12),
-                )
+                textDistancia != ''
+                    ? Container(
+                        margin: EdgeInsets.only(bottom: 10),
+                        padding: EdgeInsets.only(top: 10, bottom: 10),
+                        width: 300,
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            color: Colors.white),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            Text(
+                              textDistancia,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w400, fontSize: 12),
+                            ),
+                            Text(
+                              textTime,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w400, fontSize: 12),
+                            )
+                          ],
+                        ),
+                      )
+                    : Container()
               ],
-            ),
-          ):Container()
-        ],
-      )
+            )
           : Container(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       body: OSMFlutter(
@@ -150,10 +154,9 @@ class _MainExampleState extends State<MainExample>
             maxZoomLevel: 19,
             stepZoom: 1.0,
           ),
-          roadConfiguration: RoadOption(
-            roadColor: Colors.blueAccent,
-          ),
-          showContributorBadgeForOSM: true,
+          roadConfiguration:
+              RoadOption(roadColor: Colors.blueAccent, roadWidth: 10),
+          showContributorBadgeForOSM: false,
           showDefaultInfoWindow: false,
         ),
         mapIsLoading: Center(
@@ -191,8 +194,10 @@ class _MainExampleState extends State<MainExample>
         roadType: notifierRoadType.value,
         intersectPoint: pointsRoad.getRange(1, pointsRoad.length - 1).toList(),
       );
-      textDistancia = 'Distancia: ${roadInformation.distance?.toStringAsFixed(2)} Km.';
-      textTime = "Tiempo: ${Duration(seconds: roadInformation.duration!.toInt()).inMinutes} Min.";
+      textDistancia =
+          'Distancia: ${roadInformation.distance?.toStringAsFixed(2)} Km.';
+      textTime =
+          "Tiempo: ${Duration(seconds: roadInformation.duration!.toInt()).inMinutes} Min.";
       setState(() {});
       debugPrint(
           "app duration:${Duration(seconds: roadInformation.duration!.toInt()).inMinutes}");
